@@ -161,7 +161,7 @@ def _md4(data: bytes) -> str:
         C = (C + CC) & 0xFFFFFFFF
         D = (D + DD) & 0xFFFFFFFF
 
-    return "%08x%08x%08x%08x" % (A, B, C, D)
+    return b"".join(word.to_bytes(4, "little") for word in (A, B, C, D)).hex()
 
 
 def compute_hash(candidate: str, algorithm: str) -> str:
@@ -422,10 +422,13 @@ class PassGuardXApp:
         self.root.after(0, lambda: self.status_label.config(text=f"Tried {index}/{total} candidates..."))
 
     def append_output(self, message: str):
-        self.output_text.config(state="normal")
-        self.output_text.insert(tk.END, message)
-        self.output_text.see(tk.END)
-        self.output_text.config(state="disabled")
+        def write_message():
+            self.output_text.config(state="normal")
+            self.output_text.insert(tk.END, message)
+            self.output_text.see(tk.END)
+            self.output_text.config(state="disabled")
+
+        self.root.after(0, write_message)
 
     def update_status(self, message: str):
         self.root.after(0, lambda: self.status_label.config(text=message))
@@ -474,8 +477,52 @@ def crack_targets(targets: list[str], algorithms: list[str], candidates: list[st
     return results
 
 
+def resolve_algorithms(target: str, forced_algorithm: str | None) -> list[str]:
+    if forced_algorithm:
+        return [forced_algorithm]
+    return guess_algorithms(target)
+
+
+def crack_cli_target(target: str, forced_algorithm: str | None, candidates: list[str]) -> tuple[str, list[str]]:
+    output_lines = []
+    algorithms = resolve_algorithms(target, forced_algorithm)
+    if not algorithms:
+        output_lines.append(f"WARNING: Unable to guess algorithm for hash '{target}'. Use --algorithm to force one.")
+        return target, output_lines
+
+    output_lines.append(f"Cracking {target} with algorithms: {', '.join(algorithms)}")
+    start = time.time()
+    result = crack(target, algorithms, candidates)
+    elapsed = time.time() - start
+    if result:
+        password, algorithm, details = result
+        output_lines.append(f"[FOUND] {target} -> {password} ({algorithm}) ({details})")
+    else:
+        output_lines.append(f"[NOT FOUND] {target} after {len(candidates)} candidates.")
+    output_lines.append(f"Elapsed: {elapsed:.2f}s")
+    output_lines.append("")
+    return target, output_lines
+
+
 def parse_args():
-    parser = argparse.ArgumentParser(description="Password hash cracker using wordlists and transform rules.")
+    parser = argparse.ArgumentParser(
+        prog="passguard-x",
+        description="PASSGUARD-X password hash recovery tool with GUI and CLI modes.",
+        epilog=(
+            "Examples:\n"
+            "  passguard-x\n"
+            "  passguard-x app\n"
+            "  passguard-x --hash 5f4dcc3b5aa765d61d8327deb882cf99 --algorithm md5\n"
+            "  passguard-x --hash-file hashes.txt --wordlist custom.txt --threads 4"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "mode",
+        nargs="?",
+        choices=["app", "gui", "cli"],
+        help="Launch mode. Use 'app' or 'gui' for the graphical app; CLI mode is selected automatically when hash options are used.",
+    )
     parser.add_argument("--hash", dest="hash_value", help="Target hash value to crack.")
     parser.add_argument("--hash-file", dest="hash_file", help="Text file containing one hash per line.")
     parser.add_argument("--wordlist", dest="wordlist_files", action="append", default=[], help="Additional wordlist file path. Can be repeated.")
@@ -503,6 +550,11 @@ def run_gui():
 
 WEB_HOST = "127.0.0.1"
 WEB_PORT = 8765
+WEB_PORT_ATTEMPTS = 25
+
+
+class ReusableTCPServer(socketserver.TCPServer):
+    allow_reuse_address = True
 
 
 def build_html_form(result_html: str = "", status: str = "Ready.") -> str:
@@ -512,23 +564,121 @@ def build_html_form(result_html: str = "", status: str = "Ready.") -> str:
     )
     return f"""<!DOCTYPE html>
 <html lang='en'>
-<head><meta charset='utf-8'><title>PASSGUARD-X</title></head>
-<body style='font-family:Arial,sans-serif; margin:24px;'>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>PASSGUARD-X</title>
+<style>
+  :root {{
+    --bg: #0b0b0b;
+    --panel: #121212;
+    --field: #050505;
+    --accent: #ff3b3b;
+    --accent-dark: #8b0000;
+    --text: #e6e6e6;
+    --muted: #a8a8a8;
+    --output: #00ff6a;
+  }}
+  * {{ box-sizing: border-box; }}
+  body {{
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, sans-serif;
+  }}
+  main {{
+    width: min(980px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 28px 0;
+  }}
+  h1 {{
+    color: var(--accent);
+    margin: 0 0 6px;
+    letter-spacing: 0;
+  }}
+  .status {{
+    color: var(--muted);
+    margin: 0 0 18px;
+  }}
+  form {{
+    background: var(--panel);
+    border: 1px solid #3a1111;
+    padding: 16px;
+  }}
+  label {{
+    display: block;
+    color: var(--accent);
+    margin: 0 0 12px;
+  }}
+  textarea, select, input[type='number'] {{
+    width: 100%;
+    margin-top: 6px;
+    background: var(--field);
+    color: var(--text);
+    border: 1px solid #5f1717;
+    padding: 10px;
+  }}
+  textarea {{ min-height: 150px; resize: vertical; }}
+  .row {{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }}
+  .check {{
+    color: var(--text);
+  }}
+  .actions {{
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }}
+  button {{
+    background: var(--accent-dark);
+    color: var(--text);
+    border: 1px solid var(--accent);
+    padding: 10px 14px;
+    cursor: pointer;
+  }}
+  button:hover {{ background: var(--accent); }}
+  pre {{
+    background: #000;
+    color: var(--output);
+    border: 1px solid #193d24;
+    margin-top: 16px;
+    padding: 14px;
+    min-height: 180px;
+    white-space: pre-wrap;
+    overflow: auto;
+  }}
+</style>
+</head>
+<body>
+<main>
 <h1>PASSGUARD-X</h1>
-<p>{escape(status)}</p>
+<p class='status'>{escape(status)}</p>
 <form method='POST'>
-  <label>Paste hash text or one hash per line:<br>
-    <textarea name='hashes' rows='6' cols='80'></textarea>
-  </label><br><br>
-  <label>Algorithm: <select name='algorithm'>{algorithm_select}</select></label><br><br>
-  <label><input type='checkbox' name='use_builtin' checked> Use built-in wordlists</label><br>
-  <label><input type='checkbox' name='use_rules' checked> Apply candidate transformation rules</label><br>
-  <label>Bruteforce length: <input type='number' name='bruteforce_length' min='0' value='0'></label><br><br>
-  <button type='submit'>Crack Passwords</button>
-  <button type='reset'>Clear</button>
+  <label>Paste hash text or one hash per line
+    <textarea name='hashes' rows='6'></textarea>
+  </label>
+  <div class='row'>
+    <label>Algorithm
+      <select name='algorithm'>{algorithm_select}</select>
+    </label>
+    <label>Bruteforce length
+      <input type='number' name='bruteforce_length' min='0' value='0'>
+    </label>
+  </div>
+  <label class='check'><input type='checkbox' name='use_builtin' checked> Use built-in wordlists</label>
+  <label class='check'><input type='checkbox' name='use_rules' checked> Apply candidate transformation rules</label>
+  <div class='actions'>
+    <button type='submit'>Crack Passwords</button>
+    <button type='reset'>Clear</button>
+  </div>
 </form>
-<hr>
-<pre style='background:#f3f3f3; padding:12px; white-space:pre-wrap;'>{result_html}</pre>
+<pre>{result_html}</pre>
+</main>
 </body></html>"""
 
 
@@ -598,8 +748,26 @@ class PassGuardXWebHandler(http.server.BaseHTTPRequestHandler):
 
 
 def run_web_app():
-    url = f'http://{WEB_HOST}:{WEB_PORT}'
-    with socketserver.TCPServer((WEB_HOST, WEB_PORT), PassGuardXWebHandler) as httpd:
+    httpd = None
+    selected_port = None
+    for port in range(WEB_PORT, WEB_PORT + WEB_PORT_ATTEMPTS):
+        try:
+            httpd = ReusableTCPServer((WEB_HOST, port), PassGuardXWebHandler)
+            selected_port = port
+            break
+        except OSError as exc:
+            if exc.errno != 98:
+                raise
+
+    if httpd is None or selected_port is None:
+        print(f"ERROR: No free local port found from {WEB_PORT} to {WEB_PORT + WEB_PORT_ATTEMPTS - 1}.", file=sys.stderr)
+        sys.exit(1)
+
+    url = f'http://{WEB_HOST}:{selected_port}'
+    if selected_port != WEB_PORT:
+        print(f'Port {WEB_PORT} is already in use; using {selected_port} instead.')
+
+    with httpd:
         print(f'PASSGUARD-X web app running at {url}')
         webbrowser.open(url)
         try:
@@ -611,9 +779,13 @@ def run_web_app():
 def main():
     args = parse_args()
 
-    if args.gui or (not args.hash_value and not args.hash_file):
+    if args.mode in ("app", "gui") or args.gui or (args.mode != "cli" and not args.hash_value and not args.hash_file):
         run_gui()
         return
+
+    if args.mode == "cli" and not args.hash_value and not args.hash_file:
+        print("ERROR: CLI mode requires --hash or --hash-file. Use 'passguard-x --help' for examples.", file=sys.stderr)
+        sys.exit(1)
 
     hash_targets = []
     if args.hash_value:
@@ -641,28 +813,41 @@ def main():
         sys.exit(1)
 
     candidates = generate_candidates(candidate_words, use_rules=args.use_rules)
-    print(f"Loaded {len(candidate_words)} base words, {len(candidates)} candidate variants.")
-    print(f"Preparing to crack {len(hash_targets)} hash(es) using {args.threads} thread(s).\n")
+    threads = max(1, args.threads)
+    output_lines = [
+        f"Loaded {len(candidate_words)} base words, {len(candidates)} candidate variants.",
+        f"Preparing to crack {len(hash_targets)} hash(es) using {threads} thread(s).",
+        "",
+    ]
 
-    for target in hash_targets:
-        if args.algorithm:
-            algorithms = [args.algorithm]
-        else:
-            algorithms = guess_algorithms(target)
-            if not algorithms:
-                print(f"WARNING: Unable to guess algorithm for hash '{target}'. Use --algorithm to force one.")
-                continue
+    if threads > 1 and len(hash_targets) > 1:
+        results_by_index = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
+            future_map = {
+                executor.submit(crack_cli_target, target, args.algorithm, candidates): index
+                for index, target in enumerate(hash_targets)
+            }
+            for future in concurrent.futures.as_completed(future_map):
+                index = future_map[future]
+                _, target_lines = future.result()
+                results_by_index[index] = target_lines
+        for index in range(len(hash_targets)):
+            output_lines.extend(results_by_index.get(index, []))
+    else:
+        for target in hash_targets:
+            _, target_lines = crack_cli_target(target, args.algorithm, candidates)
+            output_lines.extend(target_lines)
 
-        print(f"Cracking {target} with algorithms: {', '.join(algorithms)}")
-        start = time.time()
-        result = crack(target, algorithms, candidates)
-        elapsed = time.time() - start
-        if result:
-            password, algorithm, details = result
-            print(f"[FOUND] {target} -> {password} ({algorithm}) ({details})")
-        else:
-            print(f"[NOT FOUND] {target} after {len(candidates)} candidates.")
-        print(f"Elapsed: {elapsed:.2f}s\n")
+    output_text = "\n".join(output_lines)
+    print(output_text)
+
+    if args.output_file:
+        try:
+            with open(args.output_file, "w", encoding="utf-8") as handle:
+                handle.write(output_text + "\n")
+        except OSError as exc:
+            print(f"ERROR: Unable to write output file '{args.output_file}': {exc}", file=sys.stderr)
+            sys.exit(1)
 
     sys.exit(0)
 
