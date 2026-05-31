@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=PASSGUARD-X
+Comment=Password recovery GUI (PASSGUARD-X)
+Exec=$HOME/.local/bin/passguard-x
+Icon=security
+Terminal=false
+Categories=Utility;Security;
