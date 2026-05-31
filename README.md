@@ -9,6 +9,7 @@ Use this only on hashes you own or have explicit permission to test.
 ## Features
 
 - Graphical app mode with a dark red PASSGUARD-X theme.
+- Custom PASSGUARD-X desktop launcher icon.
 - CLI mode from the same `passguard-x` command.
 - Supports `md5`, `sha1`, `sha224`, `sha256`, `sha384`, `sha512`, `sha3_256`, and `ntlm`.
 - Accepts one hash or a file containing many hashes.

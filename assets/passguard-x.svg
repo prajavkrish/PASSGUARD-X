@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">PASSGUARD-X</title>
+  <desc id="desc">A red shield and keyhole logo for PASSGUARD-X.</desc>
+  <defs>
+    <linearGradient id="shield" x1="42" y1="28" x2="214" y2="228" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff5252"/>
+      <stop offset="0.52" stop-color="#c1121f"/>
+      <stop offset="1" stop-color="#650000"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="68" y1="32" x2="188" y2="220" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff9a9a"/>
+      <stop offset="1" stop-color="#210000"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="#070707"/>
+  <path d="M128 22 42 54v68c0 55 33 92 86 118 53-26 86-63 86-118V54L128 22Z" fill="url(#edge)"/>
+  <path d="M128 34 55 61v60c0 47 27 80 73 104 46-24 73-57 73-104V61l-73-27Z" fill="url(#shield)"/>
+  <path d="M82 86h92v20H82V86Zm0 64h92v20H82v-20Z" fill="#111"/>
+  <path d="M88 92h80v8H88v-8Zm0 64h80v8H88v-8Z" fill="#ffb3b3" opacity=".36"/>
+  <path d="M128 82c-27 0-49 22-49 49s22 49 49 49 49-22 49-49-22-49-49-49Zm0 22c15 0 27 12 27 27s-12 27-27 27-27-12-27-27 12-27 27-27Z" fill="#080808"/>
+  <path d="M128 111c-11 0-20 9-20 20 0 7 4 14 10 17l-8 31h36l-8-31c6-3 10-10 10-17 0-11-9-20-20-20Z" fill="#ffefef"/>
+  <path d="M75 48 128 28l53 20-53 18-53-18Z" fill="#ff7a7a" opacity=".38"/>
+  <path d="M66 65v56c0 42 23 71 62 93" fill="none" stroke="#ffdfdf" stroke-width="7" stroke-linecap="round" opacity=".24"/>
+  <path d="M70 213 213 70" stroke="#ff3b3b" stroke-width="13" stroke-linecap="round"/>
+  <path d="M77 220 220 77" stroke="#0b0b0b" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+</svg>

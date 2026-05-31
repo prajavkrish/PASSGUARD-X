@@ -59,6 +59,15 @@ python3 cracker.py "\$@"
 EOF
 chmod +x "$LAUNCHER_PATH"
 
+# Install app icon for desktop launchers
+ICON_SOURCE="$INSTALL_DIR/assets/passguard-x.svg"
+ICON_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
+ICON_PATH="$ICON_DIR/passguard-x.svg"
+if [ -f "$ICON_SOURCE" ]; then
+  mkdir -p "$ICON_DIR"
+  cp "$ICON_SOURCE" "$ICON_PATH"
+fi
+
 PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
 for SHELL_RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
   if [ -f "$SHELL_RC" ] && ! grep -Fq '.local/bin' "$SHELL_RC"; then
@@ -79,7 +88,7 @@ Type=Application
 Name=PASSGUARD-X
 Comment=Password recovery GUI (PASSGUARD-X)
 Exec=$HOME/.local/bin/passguard-x app
-Icon=security
+Icon=passguard-x
 Terminal=false
 Categories=System;Security;
 StartupNotify=true
