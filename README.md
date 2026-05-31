@@ -38,6 +38,12 @@ If `~/.local/bin` is not in your terminal `PATH`, add this line to your shell co
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
+Do not replace your whole `PATH`; only add `~/.local/bin` to it. If your terminal says `env: 'bash': No such file or directory`, reset the basic path once:
+
+```bash
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/bin:/bin:$HOME/.local/bin"
+```
+
 Then restart the terminal or run:
 
 ```bash

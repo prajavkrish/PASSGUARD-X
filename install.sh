@@ -51,7 +51,7 @@ fi
 mkdir -p "$HOME/.local/bin"
 LAUNCHER_PATH="$HOME/.local/bin/passguard-x"
 cat > "$LAUNCHER_PATH" <<EOF
-#!/usr/bin/env bash
+#!/bin/sh
 # Launcher for PASSGUARD-X
 SCRIPT_DIR="$INSTALL_DIR"
 cd "\$SCRIPT_DIR" || exit 1
