@@ -7,10 +7,17 @@
 -    ░██         ░██    ░██  ░██   ░██   ░██   ░██   ░██  ░███  ░██   ░██  ░██    ░██ ░██    ░██  ░██   ░██           ░██  ░██
 -    ░██         ░██    ░██   ░██████     ░██████     ░█████░█   ░██████   ░██    ░██ ░██     ░██ ░███████           ░██    ░██
 ```
- [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)                                                                                                                        
-![Python](https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python)
-![SOC](https://img.shields.io/badge/SOC-Monitoring-red?style=for-the-badge)                                                                                                                                      
-                                                                                                                              
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Tkinter](https://img.shields.io/badge/Tkinter-GUI-blue?style=for-the-badge)
+![Multithreading](https://img.shields.io/badge/Multithreading-Concurrency-orange?style=for-the-badge)
+![Hashlib](https://img.shields.io/badge/Hashlib-Hashing-green?style=for-the-badge)
+![Git](https://img.shields.io/badge/Git-Version_Control-F05032?style=for-the-badge&logo=git&logoColor=white)
+![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white)  
+![Cybersecurity](https://img.shields.io/badge/Cybersecurity-Security-red?style=for-the-badge)
+![GUI](https://img.shields.io/badge/Interface-GUI-blueviolet?style=for-the-badge)
+![CLI](https://img.shields.io/badge/Interface-CLI-black?style=for-the-badge)
+![Open Source](https://img.shields.io/badge/Open%20Source-Yes-success?style=for-the-badge)
+![MIT License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
                                                                                                                                    
                                                                                                                               
 > This tool is for educational, defensive, and authorized password auditing only. Do not use it against systems, accounts, or hashes you do not own or have explicit permission to test.
