@@ -1,10 +1,16 @@
 # PASSGUARD-X
 
+> This tool is for educational, defensive, and authorized password auditing only. Do not use it against systems, accounts, or hashes you do not own or have explicit permission to test.
+
 PASSGUARD-X is a red-themed password hash recovery tool with both a graphical app and a command-line interface.
+
+## Screenshot
+
+![PASSGUARD-X GUI preview](docs/screenshots/gui-preview.svg)
 
 ## Important
 
-Use this only on hashes you own or have explicit permission to test.
+Use PASSGUARD-X only for local hash recovery, defensive auditing, training labs, or authorized security work. You are responsible for following all applicable laws and rules of engagement.
 
 ## Features
 
@@ -16,6 +22,12 @@ Use this only on hashes you own or have explicit permission to test.
 - Loads built-in `.txt` wordlists from `wordlists/`.
 - Supports extra wordlists, candidate rules, short brute-force candidates, threads, and output files.
 - Falls back to a red-themed browser app if Tkinter is not installed.
+
+## Requirements
+
+- Python 3.10 or newer.
+- No third-party Python packages are required.
+- Optional GUI dependency: Tkinter. If Tkinter is unavailable, PASSGUARD-X automatically opens the red-themed browser app.
 
 ## Install
 
@@ -144,6 +156,30 @@ python3 cracker.py --help
 - Built-in wordlists live in `wordlists/common.txt` and `wordlists/extra.txt`.
 - Add your own `.txt` files to `wordlists/`, or pass them with `--wordlist`.
 - Use `--no-builtin` if you only want custom wordlists.
+
+## Project Structure
+
+```text
+PASSGUARD-X/
+|-- assets/
+|   `-- passguard-x.svg
+|-- bin/
+|   `-- run_passguard_x.sh
+|-- docs/
+|   `-- screenshots/
+|       `-- gui-preview.svg
+|-- tests/
+|   `-- test_cracker.py
+|-- wordlists/
+|   |-- common.txt
+|   `-- extra.txt
+|-- cracker.py
+|-- install.sh
+|-- passguard-x.desktop
+|-- requirements.txt
+|-- LICENSE
+`-- README.md
+```
 
 ## Useful Options
 

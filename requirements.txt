@@ -1,0 +1,2 @@
+# PASSGUARD-X uses only the Python standard library.
+# Optional GUI support requires Tkinter from your operating system package manager.
